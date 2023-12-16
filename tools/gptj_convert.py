@@ -41,12 +41,7 @@ def split_and_convert_process(i, saved_dir, factor, key, args, val, old_name, dt
     if (
         "input_layernorm.weight" in key
         or "input_layernorm.bias" in key
-        or "attention.dense.bias" in key
-        or "post_attention_layernorm.weight" in key
-        or "post_attention_layernorm.bias" in key
         or "mlp.dense_4h_to_h.bias" in key
-        or "final_layernorm.weight" in key
-        or "final_layernorm.bias" in key
     ):
         # shared weights, only need to convert the weights of rank 0
         if i == 0:
@@ -58,21 +53,6 @@ def split_and_convert_process(i, saved_dir, factor, key, args, val, old_name, dt
             save_val(split_vals[j], key, i * factor + j)
 
     elif "mlp.dense_h_to_4h.weight" in key or "mlp.dense_h_to_4h.bias" in key:
-        split_vals = np.split(val, factor, axis=-1)
-        for j in range(factor):
-            save_val(split_vals[j], key, i * factor + j)
-
-    elif "attention.query_key_value.bias" in key:
-        hidden_dim = (int)(val.shape[-1] / 3)
-
-        # TODO: hard coded num_attention_heads as 32, size per head as 128
-        val = val.reshape(32, 128 * 3)
-        qkv = np.split(val, 3, axis=-1)
-        q = qkv[0].reshape(1, hidden_dim)
-        k = qkv[1].reshape(1, hidden_dim)
-        v = qkv[2].reshape(1, hidden_dim)
-        val = np.concatenate((q, k, v), axis=-1)
-
         split_vals = np.split(val, factor, axis=-1)
         for j in range(factor):
             save_val(split_vals[j], key, i * factor + j)
@@ -143,7 +123,7 @@ def split_and_convert(args):
 
     np_weight_data_type = get_weight_data_type(args.weight_data_type)
 
-    huggingface_model_name_pattern = [
+    hf_model_name_pattern = [
         "ln_1.bias",
         "ln_1.weight",
         "attention.query_key_value.weight",
@@ -158,7 +138,6 @@ def split_and_convert(args):
         "input_layernorm.bias",
         "input_layernorm.weight",
         "attention.query_key_value.weight",
-        "attention.dense.bias",
         "attention.dense.weight",
         "mlp.dense_h_to_4h.bias",
         "mlp.dense_h_to_4h.weight",
@@ -190,7 +169,7 @@ def split_and_convert(args):
 
     pool = multiprocessing.Pool(args.processes)
     for name, param in model_named_parameters.items():
-        if name == "model.embed_tokens.weight":
+        if name == "transformer.wte.weight":
             param.detach().cpu().numpy().astype(np_weight_data_type).tofile(os.path.join(saved_dir, "model.wte.bin"))
         elif name == "transformer.ln_f.weight":
             param.detach().cpu().numpy().astype(np_weight_data_type).tofile(
@@ -213,7 +192,9 @@ def split_and_convert(args):
             for i in range(len(hf_model_name_pattern)):
                 if hf_model_name_pattern[i] in name:
                     factor = 1
-                    new_name = name.replace(hf_model_name_pattern[i], ft_model_name_pattern[i])
+                    new_name = name.replace("transformer.h.", "layers.").replace(
+                        hf_model_name_pattern[i], ft_model_name_pattern[i]
+                    )
                     starmap_args.append(
                         (
                             0,
