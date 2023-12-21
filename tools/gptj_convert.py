@@ -41,7 +41,14 @@ def split_and_convert_process(i, saved_dir, factor, key, args, val, old_name, dt
     if (
         "input_layernorm.weight" in key
         or "input_layernorm.bias" in key
-        or "mlp.dense_4h_to_h.bias" in key
+    ):
+        # shared weights, only need to convert the weights of rank 0
+        if i == 0:
+            save_val(val, key)
+            save_val(val, key.replace("input_layernorm", "post_attention_layernorm"))
+
+    elif (
+        "mlp.dense_4h_to_h.bias" in key
     ):
         # shared weights, only need to convert the weights of rank 0
         if i == 0:
