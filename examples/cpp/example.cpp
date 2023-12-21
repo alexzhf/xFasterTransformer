@@ -26,6 +26,7 @@
 #include "xfastertransformer.h"
 
 extern const char *vocab_opt[];
+extern const char *vocab_gptj[];
 
 class TokenizerBase {
 public:
@@ -176,9 +177,45 @@ private:
     const char **vocab_list = vocab_opt;
 };
 
+class GPTJTokenizer : public TokenizerBase {
+public:
+    GPTJTokenizer(std::string &tokenPath) { vocabSize = 50257; }
+
+    std::vector<int> encode(std::string &input) override {
+        // Once upon a time, there existed a little girl, who liked to have adventures. She wanted to go to places and meet new people, and have fun
+        return std::vector<int>({7454, 2402, 257, 640, 11, 612, 11196, 257, 1310, 2576, 11, 508, 8288, 284, 423, 17545, 13, 1375, 2227, 284, 467, 284, 4113, 290, 1826, 649, 661, 11, 290, 423, 1257});
+    }
+
+    std::string decode(std::vector<int> &ids) override {
+        if (ids.size() == 1) { return decode(ids[0]); }
+        std::string text("");
+        for (int id : ids) {
+            if (id < vocabSize) {
+                text += vocab_list[id];
+                //text += " ";
+            } else {
+                text += "(null) ";
+            }
+        }
+        return text;
+    }
+    std::string decode(int id) override {
+        if (id < vocabSize) {
+            return vocab_list[id];
+        } else {
+            return "(null)";
+        }
+    }
+
+private:
+    const char **vocab_list = vocab_gptj;
+};
+
 TokenizerBase *getTokenizer(std::string &modeltype, std::string &tokenPath) {
     if (modeltype == "gpt") {
         return new OptTokenizer(tokenPath);
+    } else if (modeltype == "gptj") {
+        return new GPTJTokenizer(tokenPath);
     } else if (modeltype == "llama") {
         return new LlamaTokenizer(tokenPath);
     } else if (modeltype == "baichuan") {
