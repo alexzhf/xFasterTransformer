@@ -182,8 +182,7 @@ public:
     GPTJTokenizer(std::string &tokenPath) { vocabSize = 50257; }
 
     std::vector<int> encode(std::string &input) override {
-        // Once upon a time, there existed a little girl, who liked to have adventures. She wanted to go to places and meet new people, and have fun
-        return std::vector<int>({7454, 2402, 257, 640, 11, 612, 11196, 257, 1310, 2576, 11, 508, 8288, 284, 423, 17545, 13, 1375, 2227, 284, 467, 284, 4113, 290, 1826, 649, 661, 11, 290, 423, 1257});
+        return std::vector<int>({7454, 2402, 257, 640, 11, 612, 11196, 257, 1310, 2576, 508, 8288, 284, 423, 17545, 13});
     }
 
     std::string decode(std::vector<int> &ids) override {

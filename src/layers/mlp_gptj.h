@@ -13,28 +13,19 @@
 // limitations under the License.
 // ============================================================================
 #pragma once
+#include <cmath>
 
-#include "common_decoder.h"
-#include "mlp_gptj.h"
-#include "layers_norm.h"
-#include "rotary_embedding.h"
-#include "token_embedding.h"
+#include "mlp_standard.h"
 
 template <typename WeiT>
-class GPTJ : public CommonDecoder<Attention<WeiT, LlamaRotaryEmbedding, LayerNorm>, GPTJMLP<WeiT>, float, true> {
+class GPTJMLP : public MLP<WeiT, false> {
 public:
-    GPTJ(const std::string &modelPath);
-    ~GPTJ();
+    GPTJMLP(DecoderContext *ctx) : MLP<WeiT, false>(ctx) { residScale = 0; }
 
-    void prepareAttnMask(int *ids, int step);
-    void embeddingForward(int *ids, float *output, int batchSize, int seqLen);
-    void lastLayerNormForward(float *input, float *output, int rows);
+protected:
+    float getResidentialScale() override { return residScale; }
 
 private:
-    void setEmbeddingWeights(const std::string &modelPath);
-    void setFinalLnWeight(const std::string &modelPath);
-
-private:
-    TokenEmbedding<float16_t> *embedding;
-    LayerNorm finalLN;
+    // Residential scale
+    float residScale;
 };

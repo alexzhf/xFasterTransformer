@@ -180,6 +180,9 @@ public:
 
         // Decoder: forward
         int hiddenSize = ctx->hiddenSize;
+        
+        int overallSize = hiddenSize * userSideBS * seqLen; //* beamSize 
+
         for (int i = 0; i < this->decoders.size(); ++i) {
             int workers = this->messenger.getSize();
             if (step == 0 && this->prefixSharing) {
@@ -236,6 +239,26 @@ public:
                 } else {
                     this->decoders[i]->forwardFFN(
                             getContext(), attnOut.Data(), this->embBuf->Data(), attnOut.Stride(), hiddenSize, true);
+                }
+            }
+
+            // When attention and FFN/MLP are in parallel, still need to combine them as final output
+            if constexpr (ATTN_MLP_PARALLEL) {
+                if (this->messenger.getSize() > 1) {
+                    if (ctx->splitIdx == 0) {
+#pragma omp parallel for
+                        for (int i = 0; i < overallSize; ++i) {
+                            this->embBuf->Data()[i] = this->embBuf->Data()[i] + attnOut.Data()[i];
+                        }                    
+                    }
+                } else {
+                    assert(this->embBuf->Rows() == ctx->batchSize * ctx->inputSeqLen);
+                    assert(this->embBuf->Cols() == ctx->hiddenSize);
+                    assert(overallSize == ctx->batchSize * ctx->inputSeqLen * ctx->hiddenSize);
+#pragma omp parallel for
+                    for (int i = 0; i < overallSize; ++i) {
+                        this->embBuf->Data()[i] = this->embBuf->Data()[i] + attnOut.Data()[i];
+                    }                    
                 }
             }
         }

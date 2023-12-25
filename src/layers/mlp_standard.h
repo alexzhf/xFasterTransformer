@@ -125,6 +125,9 @@ public:
             if (gamma == 1) {
                 DecoderUtil::denseWithSum(imBuffer, outputWeight, outputWeightScale, outputWeightZero, outputWeightSum,
                         outputBias, resultBuffer2, resultBuffer1);
+            } else if (gamma == 0) {
+                DecoderUtil::dense(imBuffer, outputWeight, outputWeightScale, outputWeightZero, outputWeightSum, outputBias,
+                        resultBuffer1);                
             } else {
                 DecoderUtil::denseWithScaledSum(imBuffer, outputWeight, outputWeightScale, outputWeightZero,
                         outputWeightSum, outputBias, gamma, resultBuffer2, resultBuffer1);
