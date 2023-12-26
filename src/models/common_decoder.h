@@ -252,9 +252,16 @@ public:
                         }                    
                     }
                 } else {
-                    assert(this->embBuf->Rows() == ctx->batchSize * ctx->inputSeqLen);
-                    assert(this->embBuf->Cols() == ctx->hiddenSize);
+#ifdef DEBUG
+                    dbg.debugPrint("ctx: hiddensize - %d, bs - %d, seqlen - %d\n", ctx->hiddenSize, ctx->batchSize, ctx->inputSeqLen);
+                    dbg.debugPrint("overallSize: hiddensize - %d, bs - %d, seqlen - %d\n", hiddenSize, userSideBS, seqLen);
+                    dbg.debugPrint("embBuf: Rows - %d, Cols - %d, Stride - %d\n", this->embBuf->Rows(), this->embBuf->Cols(), this->embBuf->Stride());
                     assert(overallSize == ctx->batchSize * ctx->inputSeqLen * ctx->hiddenSize);
+                    assert(this->embBuf->Cols() == ctx->hiddenSize);
+//                    assert(this->embBuf->Rows() == ctx->batchSize * ctx->inputSeqLen);
+//                    dbg.dumpMatrix(this->embBuf->Data(), ctx->batchSize * ctx->inputSeqLen, ctx->hiddenSize, ctx->hiddenSize);
+#endif                    
+
 #pragma omp parallel for
                     for (int i = 0; i < overallSize; ++i) {
                         this->embBuf->Data()[i] = this->embBuf->Data()[i] + attnOut.Data()[i];
