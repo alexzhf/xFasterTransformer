@@ -17,11 +17,11 @@
 #include "common_decoder.h"
 #include "mlp_gptj.h"
 #include "layers_norm.h"
-#include "rotary_embedding.h"
+#include "rotary_embedding_gptj.h"
 #include "token_embedding.h"
 
 template <typename WeiT>
-class GPTJ : public CommonDecoder<Attention<WeiT, LlamaRotaryEmbedding, LayerNorm>, GPTJMLP<WeiT>, float, true> {
+class GPTJ : public CommonDecoder<Attention<WeiT, GPTJRotaryEmbedding, LayerNorm>, GPTJMLP<WeiT>, float, true> {
 public:
     GPTJ(const std::string &modelPath);
     ~GPTJ();

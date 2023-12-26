@@ -18,7 +18,7 @@
 
 template <typename WeiT>
 GPTJ<WeiT>::GPTJ(const std::string &modelPath)
-    : CommonDecoder<Attention<WeiT, LlamaRotaryEmbedding, LayerNorm>, GPTJMLP<WeiT>, float, true>(modelPath, "gptj") {
+    : CommonDecoder<Attention<WeiT, GPTJRotaryEmbedding, LayerNorm>, GPTJMLP<WeiT>, float, true>(modelPath, "gptj") {
     // Context
     DecoderContext *ctx = this->getContext();
 
