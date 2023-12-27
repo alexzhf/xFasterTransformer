@@ -31,7 +31,7 @@
 
 class GPTJRotaryEmbedding {
 public:
-    GPTJRotaryEmbedding(const int dim=64, const int max_position_embeddings = 2048, const float base = 10000);
+    GPTJRotaryEmbedding(const int = 64, const int max_position_embeddings = 2048, const float base = 10000);
 
     ~GPTJRotaryEmbedding() {}
 

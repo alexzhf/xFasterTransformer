@@ -21,24 +21,27 @@ static int inv_freq_size = -1;
 static float *inv_freq;
 static float *emb_cos = nullptr;
 static float *emb_sin = nullptr;
+// use fixed rotary dim 64 & ignore head size
+static int rotary_dim = 64;
 
 bool GPTJRotaryEmbedding::initialized = false;
 
 // dim: equals to head size
 GPTJRotaryEmbedding::GPTJRotaryEmbedding(const int dim, const int max_position_embeddings, const float base) {
+
     if (!initialized) {
         initialized = true;
 
         max_seq_len_cached = max_position_embeddings;
-        inv_freq_size = (dim + 1) / 2;
+        inv_freq_size = (rotary_dim + 1) / 2;
         inv_freq = (float *)malloc(inv_freq_size * sizeof(float));
         for (size_t i = 0; i < inv_freq_size; i++) {
-            inv_freq[i] = 1.0 / pow(base, float(i * 2) / dim);
+            inv_freq[i] = 1.0 / pow(base, float(i * 2) / rotary_dim);
         }
 
         gptjCalEmb();
-    } else if (dim != inv_freq_size * 2) {
-        printf("Incorrect dim=%d, inv_freq_size=%d\n", dim, inv_freq_size);
+    } else if (rotary_dim != inv_freq_size * 2) {
+        printf("Incorrect dim=%d, inv_freq_size=%d\n", rotary_dim, inv_freq_size);
         exit(-1);
     }
 };
@@ -95,7 +98,9 @@ void GPTJRotaryEmbedding::gptjCalEmb() {
 void GPTJRotaryEmbedding::forward(
         float *query, float *key, int qStride, int kStride, const int *qkShape, const int *positionIds) {
     int dim = inv_freq_size * 2;
-    REQUIRES(dim == qkShape[3], "Incorrect shape, this dimention is not the head size.");
+//    REQUIRES(dim == qkShape[3], "Incorrect shape, this dimention is not the head size.");
+    REQUIRES(dim<=qkShape[3], "Incorrect shape, this dimention is not the head size.");
+    int head_size = qkShape[3];
 
     const int batchSize = qkShape[0];
     const int seqLen = qkShape[1];
@@ -118,8 +123,8 @@ void GPTJRotaryEmbedding::forward(
                 float *pcos = emb_cos + pos * dim;
                 float *psin = emb_sin + pos * dim;
 
-                float *q = query + bs * seqLen * qStride + seq * qStride + head * dim;
-                float *k = key + bs * seqLen * kStride + seq * kStride + head * dim;
+                float *q = query + bs * seqLen * qStride + seq * qStride + head * head_size;
+                float *k = key + bs * seqLen * kStride + seq * kStride + head * head_size;
 #pragma omp simd
                 for (int i = 0; i < half; ++i) {
                     if (head < qHeads) {
